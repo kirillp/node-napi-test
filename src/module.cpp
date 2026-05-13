@@ -1,15 +1,22 @@
-#include <assert.h>
 #include <stdio.h>
 #include <node_api.h>
 
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 
+static inline bool napiCheck(napi_env env, napi_status status) {
+  if (status != napi_ok) {
+    napi_throw_error(env, nullptr, "N-API call failed");
+    return false;
+  }
+  return true;
+}
+
 static napi_value Method(napi_env env, napi_callback_info info) {
   napi_status status;
   napi_value world;
   status = napi_create_string_utf8(env, "world", 5, &world);
-  assert(status == napi_ok);
+  if (!napiCheck(env, status)) return nullptr;
   return world;
 }
 
@@ -19,7 +26,7 @@ static napi_value LogObject(napi_env env, napi_callback_info info) {
   napi_value args[1];
 
   status = napi_get_cb_info(env, info, &argc, args, nullptr, nullptr);
-  assert(status == napi_ok);
+  if (!napiCheck(env, status)) return nullptr;
 
   if (argc < 1) {
     fprintf(stdout, "Error: expected an object argument\n");
@@ -29,7 +36,7 @@ static napi_value LogObject(napi_env env, napi_callback_info info) {
 
   napi_valuetype arg_type;
   status = napi_typeof(env, args[0], &arg_type);
-  assert(status == napi_ok);
+  if (!napiCheck(env, status)) return nullptr;
 
   if (arg_type != napi_object) {
     fprintf(stdout, "Error: argument must be an object\n");
@@ -39,32 +46,32 @@ static napi_value LogObject(napi_env env, napi_callback_info info) {
 
   napi_value keys;
   status = napi_get_property_names(env, args[0], &keys);
-  assert(status == napi_ok);
+  if (!napiCheck(env, status)) return nullptr;
 
   uint32_t length;
   status = napi_get_array_length(env, keys, &length);
-  assert(status == napi_ok);
+  if (!napiCheck(env, status)) return nullptr;
 
   fprintf(stdout, "Object {\n");
 
   for (uint32_t i = 0; i < length; i++) {
     napi_value key;
     status = napi_get_element(env, keys, i, &key);
-    assert(status == napi_ok);
+    if (!napiCheck(env, status)) return nullptr;
 
     char key_str[256];
     size_t key_len;
     status = napi_get_value_string_utf8(env, key, key_str, sizeof(key_str), &key_len);
-    assert(status == napi_ok);
+    if (!napiCheck(env, status)) return nullptr;
     key_str[key_len] = '\0';
 
     napi_value value; 
     status = napi_get_property(env, args[0], key, &value);
-    assert(status == napi_ok);
+    if (!napiCheck(env, status)) return nullptr;
 
     napi_valuetype value_type;
     status = napi_typeof(env, value, &value_type);
-    assert(status == napi_ok);
+    if (!napiCheck(env, status)) return nullptr;
 
     const char *type_str;
     switch (value_type) {
@@ -117,87 +124,89 @@ static napi_value TransformRecursive(napi_env env, napi_value input) {
 
   napi_value output;
   status = napi_create_object(env, &output);
-  assert(status == napi_ok);
+  if (!napiCheck(env, status)) return nullptr;
 
   napi_value keys;
   status = napi_get_property_names(env, input, &keys);
-  assert(status == napi_ok);
+  if (!napiCheck(env, status)) return nullptr;
 
   uint32_t length;
   status = napi_get_array_length(env, keys, &length);
-  assert(status == napi_ok);
+  if (!napiCheck(env, status)) return nullptr;
 
   for (uint32_t i = 0; i < length; i++) {
     napi_value key;
     status = napi_get_element(env, keys, i, &key);
-    assert(status == napi_ok);
+    if (!napiCheck(env, status)) return nullptr;
 
     char key_str[256];
     size_t key_len;
     status = napi_get_value_string_utf8(env, key, key_str, sizeof(key_str), &key_len);
-    assert(status == napi_ok);
+    if (!napiCheck(env, status)) return nullptr;
     key_str[key_len] = '\0';
 
     napi_value value;
     status = napi_get_property(env, input, key, &value);
-    assert(status == napi_ok);
+    if (!napiCheck(env, status)) return nullptr;
 
     napi_valuetype value_type;
     status = napi_typeof(env, value, &value_type);
-    assert(status == napi_ok);
+    if (!napiCheck(env, status)) return nullptr;
 
     if (value_type == napi_string || value_type == napi_number) {
       napi_value new_value;
       status = napi_create_string_utf8(env, key_str, key_len, &new_value);
-      assert(status == napi_ok);
+      if (!napiCheck(env, status)) return nullptr;
       status = napi_set_property(env, output, value, new_value);
-      assert(status == napi_ok);
+      if (!napiCheck(env, status)) return nullptr;
     } else if (value_type == napi_object) {
       bool is_array;
       status = napi_is_array(env, value, &is_array);
-      assert(status == napi_ok);
+      if (!napiCheck(env, status)) return nullptr;
 
       if (is_array) {
         uint32_t arr_length;
         status = napi_get_array_length(env, value, &arr_length);
-        assert(status == napi_ok);
+        if (!napiCheck(env, status)) return nullptr;
 
         napi_value new_array;
         status = napi_create_array(env, &new_array);
-        assert(status == napi_ok);
+        if (!napiCheck(env, status)) return nullptr;
 
         uint32_t new_idx = 0;
         for (uint32_t j = 0; j < arr_length; j++) {
           napi_value element;
           status = napi_get_element(env, value, j, &element);
-          assert(status == napi_ok);
+          if (!napiCheck(env, status)) return nullptr;
 
           napi_valuetype elem_type;
           status = napi_typeof(env, element, &elem_type);
-          assert(status == napi_ok);
+          if (!napiCheck(env, status)) return nullptr;
 
           if (elem_type == napi_object) {
             bool elem_is_array;
             status = napi_is_array(env, element, &elem_is_array);
-            assert(status == napi_ok);
+            if (!napiCheck(env, status)) return nullptr;
             if (!elem_is_array) {
               napi_value processed = TransformRecursive(env, element);
+              if (processed == nullptr) return nullptr;
               status = napi_set_element(env, new_array, new_idx++, processed);
-              assert(status == napi_ok);
+              if (!napiCheck(env, status)) return nullptr;
             }
           }
         }
 
         status = napi_set_property(env, output, key, new_array);
-        assert(status == napi_ok);
+        if (!napiCheck(env, status)) return nullptr;
       } else {
         napi_value processed = TransformRecursive(env, value);
+        if (processed == nullptr) return nullptr;
         status = napi_set_property(env, output, key, processed);
-        assert(status == napi_ok);
+        if (!napiCheck(env, status)) return nullptr;
       }
     } else {
       status = napi_set_property(env, output, key, value);
-      assert(status == napi_ok);
+      if (!napiCheck(env, status)) return nullptr;
     }
   }
 
@@ -210,7 +219,7 @@ static napi_value TransformObject(napi_env env, napi_callback_info info) {
   napi_value args[1];
 
   status = napi_get_cb_info(env, info, &argc, args, nullptr, nullptr);
-  assert(status == napi_ok);
+  if (!napiCheck(env, status)) return nullptr;
 
   if (argc < 1) {
     napi_throw_type_error(env, nullptr, "Expected an object argument");
@@ -219,7 +228,7 @@ static napi_value TransformObject(napi_env env, napi_callback_info info) {
 
   napi_valuetype arg_type;
   status = napi_typeof(env, args[0], &arg_type);
-  assert(status == napi_ok);
+  if (!napiCheck(env, status)) return nullptr;
 
   if (arg_type != napi_object) {
     napi_throw_type_error(env, nullptr, "Argument must be an object");
@@ -228,7 +237,7 @@ static napi_value TransformObject(napi_env env, napi_callback_info info) {
 
   bool is_array;
   status = napi_is_array(env, args[0], &is_array);
-  assert(status == napi_ok);
+  if (!napiCheck(env, status)) return nullptr;
   if (is_array) {
     napi_throw_type_error(env, nullptr, "Argument must be a plain object, not an array");
     return nullptr;
@@ -245,7 +254,7 @@ static napi_value Init(napi_env env, napi_value exports) {
     {"transformObject", 0, TransformObject, 0,0,0, napi_default, 0}
   };
   status = napi_define_properties(env, exports, 3, desc);
-  assert(status == napi_ok);
+  if (!napiCheck(env, status)) return nullptr;
   return exports;
 }
 
