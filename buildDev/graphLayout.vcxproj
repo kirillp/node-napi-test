@@ -86,6 +86,7 @@
       <GenerateMapFile>true</GenerateMapFile>
       <MapFileName>$(IntermediateOutputPath)$(TargetName).map</MapFileName>
       <ImportLibrary>$(IntermediateOutputPath)$(TargetName).lib</ImportLibrary>
+      <ProgramDatabaseFile>$(Configuration)\obj\$(ProjectName)\$(TargetName).pdb</ProgramDatabaseFile>
     </Link>
     <ResourceCompile>
       <AdditionalIncludeDirectories>C:\Users\p00669251\AppData\Local\node-gyp\Cache\24.14.1\include\node;C:\Users\p00669251\AppData\Local\node-gyp\Cache\24.14.1\src;C:\Users\p00669251\AppData\Local\node-gyp\Cache\24.14.1\deps\openssl\config;C:\Users\p00669251\AppData\Local\node-gyp\Cache\24.14.1\deps\openssl\openssl\include;C:\Users\p00669251\AppData\Local\node-gyp\Cache\24.14.1\deps\uv\include;C:\Users\p00669251\AppData\Local\node-gyp\Cache\24.14.1\deps\zlib;C:\Users\p00669251\AppData\Local\node-gyp\Cache\24.14.1\deps\v8\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -135,6 +136,7 @@
       <MapFileName>$(IntermediateOutputPath)$(TargetName).map</MapFileName>
       <ImportLibrary>$(IntermediateOutputPath)$(TargetName).lib</ImportLibrary>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+      <ProgramDatabaseFile>$(Configuration)\obj\$(ProjectName)\$(TargetName).pdb</ProgramDatabaseFile>
     </Link>
     <ResourceCompile>
       <AdditionalIncludeDirectories>C:\Users\p00669251\AppData\Local\node-gyp\Cache\24.14.1\include\node;C:\Users\p00669251\AppData\Local\node-gyp\Cache\24.14.1\src;C:\Users\p00669251\AppData\Local\node-gyp\Cache\24.14.1\deps\openssl\config;C:\Users\p00669251\AppData\Local\node-gyp\Cache\24.14.1\deps\openssl\openssl\include;C:\Users\p00669251\AppData\Local\node-gyp\Cache\24.14.1\deps\uv\include;C:\Users\p00669251\AppData\Local\node-gyp\Cache\24.14.1\deps\zlib;C:\Users\p00669251\AppData\Local\node-gyp\Cache\24.14.1\deps\v8\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>

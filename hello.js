@@ -1,3 +1,3 @@
-const addon = require('bindings')('hello');
+const addon = require('./graphLayout');
 
 console.log(addon.hello()); // 'world'
