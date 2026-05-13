@@ -1,8 +1,10 @@
 /graphLayout.node
 /.idea
+/.vs
 /buildDev/Debug
 /buildDev/Release
 /buildDev/.vs
+/build
 *.exp
 *.lib
 *.vcxproj.user

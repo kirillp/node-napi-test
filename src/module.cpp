@@ -112,15 +112,140 @@ static napi_value LogObject(napi_env env, napi_callback_info info) {
   return nullptr;
 }
 
+static napi_value TransformRecursive(napi_env env, napi_value input) {
+  napi_status status;
+
+  napi_value output;
+  status = napi_create_object(env, &output);
+  assert(status == napi_ok);
+
+  napi_value keys;
+  status = napi_get_property_names(env, input, &keys);
+  assert(status == napi_ok);
+
+  uint32_t length;
+  status = napi_get_array_length(env, keys, &length);
+  assert(status == napi_ok);
+
+  for (uint32_t i = 0; i < length; i++) {
+    napi_value key;
+    status = napi_get_element(env, keys, i, &key);
+    assert(status == napi_ok);
+
+    char key_str[256];
+    size_t key_len;
+    status = napi_get_value_string_utf8(env, key, key_str, sizeof(key_str), &key_len);
+    assert(status == napi_ok);
+    key_str[key_len] = '\0';
+
+    napi_value value;
+    status = napi_get_property(env, input, key, &value);
+    assert(status == napi_ok);
+
+    napi_valuetype value_type;
+    status = napi_typeof(env, value, &value_type);
+    assert(status == napi_ok);
+
+    if (value_type == napi_string || value_type == napi_number) {
+      napi_value new_value;
+      status = napi_create_string_utf8(env, key_str, key_len, &new_value);
+      assert(status == napi_ok);
+      status = napi_set_property(env, output, value, new_value);
+      assert(status == napi_ok);
+    } else if (value_type == napi_object) {
+      bool is_array;
+      status = napi_is_array(env, value, &is_array);
+      assert(status == napi_ok);
+
+      if (is_array) {
+        uint32_t arr_length;
+        status = napi_get_array_length(env, value, &arr_length);
+        assert(status == napi_ok);
+
+        napi_value new_array;
+        status = napi_create_array(env, &new_array);
+        assert(status == napi_ok);
+
+        uint32_t new_idx = 0;
+        for (uint32_t j = 0; j < arr_length; j++) {
+          napi_value element;
+          status = napi_get_element(env, value, j, &element);
+          assert(status == napi_ok);
+
+          napi_valuetype elem_type;
+          status = napi_typeof(env, element, &elem_type);
+          assert(status == napi_ok);
+
+          if (elem_type == napi_object) {
+            bool elem_is_array;
+            status = napi_is_array(env, element, &elem_is_array);
+            assert(status == napi_ok);
+            if (!elem_is_array) {
+              napi_value processed = TransformRecursive(env, element);
+              status = napi_set_element(env, new_array, new_idx++, processed);
+              assert(status == napi_ok);
+            }
+          }
+        }
+
+        status = napi_set_property(env, output, key, new_array);
+        assert(status == napi_ok);
+      } else {
+        napi_value processed = TransformRecursive(env, value);
+        status = napi_set_property(env, output, key, processed);
+        assert(status == napi_ok);
+      }
+    } else {
+      status = napi_set_property(env, output, key, value);
+      assert(status == napi_ok);
+    }
+  }
+
+  return output;
+}
+
+static napi_value TransformObject(napi_env env, napi_callback_info info) {
+  napi_status status;
+  size_t argc = 1;
+  napi_value args[1];
+
+  status = napi_get_cb_info(env, info, &argc, args, nullptr, nullptr);
+  assert(status == napi_ok);
+
+  if (argc < 1) {
+    napi_throw_type_error(env, nullptr, "Expected an object argument");
+    return nullptr;
+  }
+
+  napi_valuetype arg_type;
+  status = napi_typeof(env, args[0], &arg_type);
+  assert(status == napi_ok);
+
+  if (arg_type != napi_object) {
+    napi_throw_type_error(env, nullptr, "Argument must be an object");
+    return nullptr;
+  }
+
+  bool is_array;
+  status = napi_is_array(env, args[0], &is_array);
+  assert(status == napi_ok);
+  if (is_array) {
+    napi_throw_type_error(env, nullptr, "Argument must be a plain object, not an array");
+    return nullptr;
+  }
+
+  return TransformRecursive(env, args[0]);
+}
+
 static napi_value Init(napi_env env, napi_value exports) {
   napi_status status;
   napi_property_descriptor desc[] = {
     {"hello", 0, Method, 0,0,0, napi_default, 0},
-    {"logObject", 0, LogObject, 0,0,0, napi_default, 0}
+    {"logObject", 0, LogObject, 0,0,0, napi_default, 0},
+    {"transformObject", 0, TransformObject, 0,0,0, napi_default, 0}
   };
-  status = napi_define_properties(env, exports, 2, desc);
+  status = napi_define_properties(env, exports, 3, desc);
   assert(status == napi_ok);
-  //DebugBreak();
   return exports;
 }
 
