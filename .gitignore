@@ -1,0 +1,8 @@
+/graphLayout.node
+/.idea
+/buildDev/Debug
+/buildDev/Release
+/buildDev/.vs
+*.exp
+*.lib
+*.vcxproj.user
