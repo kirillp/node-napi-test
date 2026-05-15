@@ -29,7 +29,7 @@ static const char* nodeTypeName(napi_valuetype type) {
   }
 }
 
-static napi_value Method(napi_env env, napi_callback_info info) {
+static napi_value hello(napi_env env, napi_callback_info info) {
   napi_status status;
   napi_value world;
   status = napi_create_string_utf8(env, "world", 5, &world);
@@ -37,7 +37,7 @@ static napi_value Method(napi_env env, napi_callback_info info) {
   return world;
 }
 
-static napi_value LogObject(napi_env env, napi_callback_info info) {
+static napi_value logObject(napi_env env, napi_callback_info info) {
   napi_status status;
   size_t argc = 1;
   napi_value args[1];
@@ -123,7 +123,7 @@ static napi_value LogObject(napi_env env, napi_callback_info info) {
   return nullptr;
 }
 
-static napi_value TransformRecursive(napi_env env, napi_value input) {
+static napi_value transformRecursive(napi_env env, napi_value input) {
   napi_status status;
 
   napi_value output;
@@ -192,7 +192,7 @@ static napi_value TransformRecursive(napi_env env, napi_value input) {
             status = napi_is_array(env, element, &elem_is_array);
             if (!napiCheck(env, status)) return nullptr;
             if (!elem_is_array) {
-              napi_value processed = TransformRecursive(env, element);
+              napi_value processed = transformRecursive(env, element);
               if (processed == nullptr) return nullptr;
               status = napi_set_element(env, new_array, new_idx++, processed);
               if (!napiCheck(env, status)) return nullptr;
@@ -203,7 +203,7 @@ static napi_value TransformRecursive(napi_env env, napi_value input) {
         status = napi_set_property(env, output, key, new_array);
         if (!napiCheck(env, status)) return nullptr;
       } else {
-        napi_value processed = TransformRecursive(env, value);
+        napi_value processed = transformRecursive(env, value);
         if (processed == nullptr) return nullptr;
         status = napi_set_property(env, output, key, processed);
         if (!napiCheck(env, status)) return nullptr;
@@ -217,7 +217,7 @@ static napi_value TransformRecursive(napi_env env, napi_value input) {
   return output;
 }
 
-static napi_value TransformObject(napi_env env, napi_callback_info info) {
+static napi_value transformObject(napi_env env, napi_callback_info info) {
   napi_status status;
   size_t argc = 1;
   napi_value args[1];
@@ -247,22 +247,22 @@ static napi_value TransformObject(napi_env env, napi_callback_info info) {
     return nullptr;
   }
 
-  return TransformRecursive(env, args[0]);
+  return transformRecursive(env, args[0]);
 }
 
-napi_value GraphLayout(napi_env env, napi_callback_info info);
+napi_value graphLayout(napi_env env, napi_callback_info info);
 
-static napi_value Init(napi_env env, napi_value exports) {
+static napi_value nodeModuleInit(napi_env env, napi_value exports) {
   napi_status status;
   napi_property_descriptor desc[] = {
-    {"hello", 0, Method, 0,0,0, napi_default, 0},
-    {"logObject", 0, LogObject, 0,0,0, napi_default, 0},
-    {"transformObject", 0, TransformObject, 0,0,0, napi_default, 0},
-    {"graphLayout", 0, GraphLayout, 0,0,0, napi_default, 0}
+    {"hello", 0, hello, 0,0,0, napi_default, 0},
+    {"logObject", 0, logObject, 0,0,0, napi_default, 0},
+    {"transformObject", 0, transformObject, 0,0,0, napi_default, 0},
+    {"graphLayout", 0, graphLayout, 0,0,0, napi_default, 0}
   };
   status = napi_define_properties(env, exports, std::size(desc), desc);
   if (!napiCheck(env, status)) return nullptr;
   return exports;
 }
 
-NAPI_MODULE(NODE_GYP_MODULE_NAME, Init)
+NAPI_MODULE(NODE_GYP_MODULE_NAME, nodeModuleInit)
