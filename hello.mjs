@@ -25,7 +25,49 @@ graphLayout.logObject({ "s": "s", "5": 5, 6: 7 });
   assert(t.arr[0].y === 'x', 'transformObject: expected t.arr[0].y === "x"');
 }
 
-assert(graphLayout.graphLayout({}) === true, 'graphLayout({}) should return true');
+assert(graphLayout.graphLayout({}) === undefined, 'graphLayout({}) should return undefined');
+
+{
+  const input = {
+    id: "root",
+    children: [{
+      height: 100,
+      id: "child1",
+      width: 200,
+      layoutOptions: {
+        "org.eclipse.elk.nodeLabels.placement": "inside",
+        "org.eclipse.elk.padding": "[5,5,5,5]",
+        "org.eclipse.elk.portConstraints": "FIXED_SIDE"
+      },
+      ports: [{
+        height: 10,
+        id: "port1",
+        width: 10,
+        layoutOptions: {
+          "org.eclipse.elk.port.borderOffset": "2",
+          "org.eclipse.elk.port.side": "EAST"
+        }
+      }]
+    }],
+    edges: [{
+      id: "edge1",
+      sources: ["child1"],
+      targets: ["child2"]
+    }],
+    layoutOptions: {
+      "PyPTO.filePath": "/path",
+      "PyPTO.renderMode": "svg",
+      "PyPTO.showTensor": "1",
+      "elk.direction": "DOWN",
+      "org.eclipse.elk.algorithm": "layered",
+      "org.eclipse.elk.layered.nodePlacement.strategy": "SIMPLE",
+      "org.eclipse.elk.layered.spacing.nodeNodeBetweenLayers": "20"
+    }
+  };
+  console.log("ElkLayout data:", JSON.stringify(input));
+  const t = graphLayout.graphLayout(input);
+  assert(t === true, 'graphLayout(full input) should return true');
+}
 assert(graphLayout.graphLayout("x") === undefined, 'graphLayout("x") should return undefined');
 assert(graphLayout.graphLayout(42) === undefined, 'graphLayout(42) should return undefined');
 assert(graphLayout.graphLayout() === undefined, 'graphLayout() should return undefined');

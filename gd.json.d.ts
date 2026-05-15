@@ -62,6 +62,4 @@ declare module "gd.json" {
   }
 
   const value: ElkLayout;
-
-  export default value;
 }
