@@ -2,28 +2,6 @@
 #include <string>
 #include <vector>
 
-struct TestInterface {
-  std::string algorithm;
-  std::string nodePlacementStrategy;
-  std::string nodeNodeBetweenLayers;
-};
-
-struct LayoutOptions4 {
-  std::string filePath;
-  std::string renderMode;
-  std::string showTensor;
-  std::string direction;
-  std::string algorithm;
-  std::string nodePlacementStrategy;
-  std::string nodeNodeBetweenLayers;
-};
-
-struct ElkLayout {
-  std::vector<TestInterface> children;
-  std::string id;
-  LayoutOptions4 layoutOptions;
-};
-
 struct ElkLayoutKeys {
   napi_value id;
   napi_value children;
@@ -43,83 +21,108 @@ static napi_value makeKey(napi_env env, const char* str) {
   return key;
 }
 
-static std::string getStringProp(napi_env env, napi_value obj, napi_value key) {
+static bool getStringProp(napi_env env, napi_value obj, napi_value key, std::string& out) {
   napi_value value;
-  if (napi_get_property(env, obj, key, &value) != napi_ok) return {};
+  if (napi_get_property(env, obj, key, &value) != napi_ok) return false;
 
   napi_valuetype type;
-  if (napi_typeof(env, value, &type) != napi_ok || type != napi_string) return {};
+  if (napi_typeof(env, value, &type) != napi_ok || type != napi_string) return false;
 
   size_t len;
-  if (napi_get_value_string_utf8(env, value, nullptr, 0, &len) != napi_ok) return {};
+  if (napi_get_value_string_utf8(env, value, nullptr, 0, &len) != napi_ok) return false;
 
   std::string result(len, '\0');
-  if (napi_get_value_string_utf8(env, value, &result[0], len + 1, &len) != napi_ok) return {};
+  if (napi_get_value_string_utf8(env, value, &result[0], len + 1, &len) != napi_ok) return false;
   result.resize(len);
-  return result;
+  out = std::move(result);
+  return true;
 }
 
-static TestInterface parseTestInterface(napi_env env, napi_value obj, const ElkLayoutKeys& keys) {
-  TestInterface ti;
-  ti.algorithm = getStringProp(env, obj, keys.algorithm);
-  ti.nodePlacementStrategy = getStringProp(env, obj, keys.nodePlacementStrategy);
-  ti.nodeNodeBetweenLayers = getStringProp(env, obj, keys.nodeNodeBetweenLayers);
-  return ti;
-}
+struct TestInterface {
+  std::string algorithm;
+  std::string nodePlacementStrategy;
+  std::string nodeNodeBetweenLayers;
 
-static LayoutOptions4 parseLayoutOptions4(napi_env env, napi_value obj, const ElkLayoutKeys& keys) {
-  LayoutOptions4 opts;
-  opts.filePath = getStringProp(env, obj, keys.filePath);
-  opts.renderMode = getStringProp(env, obj, keys.renderMode);
-  opts.showTensor = getStringProp(env, obj, keys.showTensor);
-  opts.direction = getStringProp(env, obj, keys.direction);
-  opts.algorithm = getStringProp(env, obj, keys.algorithm);
-  opts.nodePlacementStrategy = getStringProp(env, obj, keys.nodePlacementStrategy);
-  opts.nodeNodeBetweenLayers = getStringProp(env, obj, keys.nodeNodeBetweenLayers);
-  return opts;
-}
-
-static ElkLayout parseElkLayout(napi_env env, napi_value obj, const ElkLayoutKeys& keys) {
-  napi_status status;
-  ElkLayout layout;
-
-  layout.id = getStringProp(env, obj, keys.id);
-
-  napi_value layoutOptsObj;
-  status = napi_get_property(env, obj, keys.layoutOptions, &layoutOptsObj);
-  if (status == napi_ok) {
-    napi_valuetype type;
-    napi_typeof(env, layoutOptsObj, &type);
-    if (type == napi_object) {
-      layout.layoutOptions = parseLayoutOptions4(env, layoutOptsObj, keys);
-    }
+  bool parse(napi_env env, napi_value obj, const ElkLayoutKeys& keys) {
+    bool ok = true;
+    ok = getStringProp(env, obj, keys.algorithm, algorithm) && ok;
+    ok = getStringProp(env, obj, keys.nodePlacementStrategy, nodePlacementStrategy) && ok;
+    ok = getStringProp(env, obj, keys.nodeNodeBetweenLayers, nodeNodeBetweenLayers) && ok;
+    return ok;
   }
+};
 
-  napi_value childrenVal;
-  status = napi_get_property(env, obj, keys.children, &childrenVal);
-  if (status == napi_ok) {
-    bool is_array;
-    napi_is_array(env, childrenVal, &is_array);
-    if (is_array) {
-      uint32_t len;
-      napi_get_array_length(env, childrenVal, &len);
-      layout.children.reserve(len);
-      for (uint32_t i = 0; i < len; i++) {
-        napi_value element;
-        status = napi_get_element(env, childrenVal, i, &element);
-        if (status == napi_ok) {
-          napi_valuetype elem_type;
-          napi_typeof(env, element, &elem_type);
-          if (elem_type == napi_object) {
-            layout.children.push_back(parseTestInterface(env, element, keys));
+struct LayoutOptions4 {
+  std::string filePath;
+  std::string renderMode;
+  std::string showTensor;
+  std::string direction;
+  std::string algorithm;
+  std::string nodePlacementStrategy;
+  std::string nodeNodeBetweenLayers;
+
+  bool parse(napi_env env, napi_value obj, const ElkLayoutKeys& keys) {
+    bool ok = true;
+    ok = getStringProp(env, obj, keys.filePath, filePath) && ok;
+    ok = getStringProp(env, obj, keys.renderMode, renderMode) && ok;
+    ok = getStringProp(env, obj, keys.showTensor, showTensor) && ok;
+    ok = getStringProp(env, obj, keys.direction, direction) && ok;
+    ok = getStringProp(env, obj, keys.algorithm, algorithm) && ok;
+    ok = getStringProp(env, obj, keys.nodePlacementStrategy, nodePlacementStrategy) && ok;
+    ok = getStringProp(env, obj, keys.nodeNodeBetweenLayers, nodeNodeBetweenLayers) && ok;
+    return ok;
+  }
+};
+
+struct ElkLayout {
+  std::vector<TestInterface> children;
+  std::string id;
+  LayoutOptions4 layoutOptions;
+
+  bool parse(napi_env env, napi_value obj, const ElkLayoutKeys& keys) {
+    napi_status status;
+    bool ok = true;
+
+    ok = getStringProp(env, obj, keys.id, id) && ok;
+
+    napi_value layoutOptsObj;
+    status = napi_get_property(env, obj, keys.layoutOptions, &layoutOptsObj);
+    if (status == napi_ok) {
+      napi_valuetype type;
+      napi_typeof(env, layoutOptsObj, &type);
+      if (type == napi_object) {
+        ok = layoutOptions.parse(env, layoutOptsObj, keys) && ok;
+      }
+    }
+
+    napi_value childrenVal;
+    status = napi_get_property(env, obj, keys.children, &childrenVal);
+    if (status == napi_ok) {
+      bool is_array;
+      napi_is_array(env, childrenVal, &is_array);
+      if (is_array) {
+        uint32_t len;
+        napi_get_array_length(env, childrenVal, &len);
+        children.reserve(len);
+        for (uint32_t i = 0; i < len; i++) {
+          napi_value element;
+          status = napi_get_element(env, childrenVal, i, &element);
+          if (status == napi_ok) {
+            napi_valuetype elem_type;
+            napi_typeof(env, element, &elem_type);
+            if (elem_type == napi_object) {
+              TestInterface ti;
+              ti.parse(env, element, keys);
+              children.push_back(std::move(ti));
+            }
           }
         }
       }
     }
-  }
 
-  return layout;
-}
+    return ok;
+  }
+};
 
 napi_value graphLayout(napi_env env, napi_callback_info info) {
   size_t argc = 1;
@@ -146,7 +149,8 @@ napi_value graphLayout(napi_env env, napi_callback_info info) {
     makeKey(env, "org.eclipse.elk.layered.spacing.nodeNodeBetweenLayers")
   };
 
-  ElkLayout layout = parseElkLayout(env, args[0], keys);
+  ElkLayout layout;
+  layout.parse(env, args[0], keys);
 
   napi_value result;
   if (napi_get_boolean(env, true, &result) != napi_ok) return nullptr;
