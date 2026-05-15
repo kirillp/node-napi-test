@@ -12,6 +12,22 @@ static inline bool napiCheck(napi_env env, napi_status status) {
   return true;
 }
 
+static const char* nodeTypeName(napi_valuetype type) {
+  switch (type) {
+    case napi_undefined: return "undefined";
+    case napi_null:      return "null";
+    case napi_boolean:   return "boolean";
+    case napi_number:    return "number";
+    case napi_string:    return "string";
+    case napi_symbol:    return "symbol";
+    case napi_function:  return "function";
+    case napi_object:    return "object";
+    case napi_external:  return "external";
+    case napi_bigint:    return "bigint";
+    default:             return "unknown";
+  }
+}
+
 static napi_value Method(napi_env env, napi_callback_info info) {
   napi_status status;
   napi_value world;
@@ -73,20 +89,7 @@ static napi_value LogObject(napi_env env, napi_callback_info info) {
     status = napi_typeof(env, value, &value_type);
     if (!napiCheck(env, status)) return nullptr;
 
-    const char *type_str;
-    switch (value_type) {
-      case napi_undefined: type_str = "undefined"; break;
-      case napi_null:      type_str = "null";      break;
-      case napi_boolean:   type_str = "boolean";   break;
-      case napi_number:    type_str = "number";    break;
-      case napi_string:    type_str = "string";    break;
-      case napi_symbol:    type_str = "symbol";    break;
-      case napi_function:  type_str = "function";  break;
-      case napi_object:    type_str = "object";    break;
-      case napi_external:  type_str = "external";  break;
-      case napi_bigint:    type_str = "bigint";    break;
-      default:             type_str = "unknown";   break;
-    }
+    const char *type_str = nodeTypeName(value_type);
 
     fprintf(stdout, "  %s (%s): ", key_str, type_str);
 
