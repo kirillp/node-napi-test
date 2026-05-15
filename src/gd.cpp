@@ -45,9 +45,9 @@ struct TestInterface {
 
   bool parse(napi_env env, napi_value obj, const ElkLayoutKeys& keys) {
     bool ok = true;
-    ok = getStringProp(env, obj, keys.algorithm, algorithm) && ok;
-    ok = getStringProp(env, obj, keys.nodePlacementStrategy, nodePlacementStrategy) && ok;
-    ok = getStringProp(env, obj, keys.nodeNodeBetweenLayers, nodeNodeBetweenLayers) && ok;
+    ok = ok && getStringProp(env, obj, keys.algorithm, algorithm);
+    ok = ok && getStringProp(env, obj, keys.nodePlacementStrategy, nodePlacementStrategy);
+    ok = ok && getStringProp(env, obj, keys.nodeNodeBetweenLayers, nodeNodeBetweenLayers);
     return ok;
   }
 };
@@ -63,13 +63,13 @@ struct LayoutOptions4 {
 
   bool parse(napi_env env, napi_value obj, const ElkLayoutKeys& keys) {
     bool ok = true;
-    ok = getStringProp(env, obj, keys.filePath, filePath) && ok;
-    ok = getStringProp(env, obj, keys.renderMode, renderMode) && ok;
-    ok = getStringProp(env, obj, keys.showTensor, showTensor) && ok;
-    ok = getStringProp(env, obj, keys.direction, direction) && ok;
-    ok = getStringProp(env, obj, keys.algorithm, algorithm) && ok;
-    ok = getStringProp(env, obj, keys.nodePlacementStrategy, nodePlacementStrategy) && ok;
-    ok = getStringProp(env, obj, keys.nodeNodeBetweenLayers, nodeNodeBetweenLayers) && ok;
+    ok = ok && getStringProp(env, obj, keys.filePath, filePath);
+    ok = ok && getStringProp(env, obj, keys.renderMode, renderMode);
+    ok = ok && getStringProp(env, obj, keys.showTensor, showTensor);
+    ok = ok && getStringProp(env, obj, keys.direction, direction);
+    ok = ok && getStringProp(env, obj, keys.algorithm, algorithm);
+    ok = ok && getStringProp(env, obj, keys.nodePlacementStrategy, nodePlacementStrategy);
+    ok = ok && getStringProp(env, obj, keys.nodeNodeBetweenLayers, nodeNodeBetweenLayers);
     return ok;
   }
 };
@@ -81,46 +81,50 @@ struct ElkLayout {
 
   bool parse(napi_env env, napi_value obj, const ElkLayoutKeys& keys) {
     napi_status status;
-    bool ok = true;
 
-    ok = getStringProp(env, obj, keys.id, id) && ok;
+    if (!getStringProp(env, obj, keys.id, id)) return false;
 
     napi_value layoutOptsObj;
     status = napi_get_property(env, obj, keys.layoutOptions, &layoutOptsObj);
-    if (status == napi_ok) {
-      napi_valuetype type;
-      napi_typeof(env, layoutOptsObj, &type);
-      if (type == napi_object) {
-        ok = layoutOptions.parse(env, layoutOptsObj, keys) && ok;
-      }
-    }
+    if (status != napi_ok) return false;
+
+    napi_valuetype type;
+    status = napi_typeof(env, layoutOptsObj, &type);
+    if (status != napi_ok) return false;
+    if (type != napi_object) return false;
+
+    if (!layoutOptions.parse(env, layoutOptsObj, keys)) return false;
 
     napi_value childrenVal;
     status = napi_get_property(env, obj, keys.children, &childrenVal);
-    if (status == napi_ok) {
-      bool is_array;
-      napi_is_array(env, childrenVal, &is_array);
-      if (is_array) {
-        uint32_t len;
-        napi_get_array_length(env, childrenVal, &len);
-        children.reserve(len);
-        for (uint32_t i = 0; i < len; i++) {
-          napi_value element;
-          status = napi_get_element(env, childrenVal, i, &element);
-          if (status == napi_ok) {
-            napi_valuetype elem_type;
-            napi_typeof(env, element, &elem_type);
-            if (elem_type == napi_object) {
-              TestInterface ti;
-              ti.parse(env, element, keys);
-              children.push_back(std::move(ti));
-            }
-          }
-        }
-      }
+    if (status != napi_ok) return false;
+
+    bool is_array;
+    status = napi_is_array(env, childrenVal, &is_array);
+    if (status != napi_ok) return false;
+    if (!is_array) return false;
+
+    uint32_t len;
+    status = napi_get_array_length(env, childrenVal, &len);
+    if (status != napi_ok) return false;
+
+    children.reserve(len);
+    for (uint32_t i = 0; i < len; i++) {
+      napi_value element;
+      status = napi_get_element(env, childrenVal, i, &element);
+      if (status != napi_ok) return false;
+
+      napi_valuetype elem_type;
+      status = napi_typeof(env, element, &elem_type);
+      if (status != napi_ok) return false;
+      if (elem_type != napi_object) return false;
+
+      TestInterface ti;
+      if (!ti.parse(env, element, keys)) return false;
+      children.push_back(std::move(ti));
     }
 
-    return ok;
+    return true;
   }
 };
 
