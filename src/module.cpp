@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <iterator>
 #include <node_api.h>
 
 #define WIN32_LEAN_AND_MEAN
@@ -249,14 +250,17 @@ static napi_value TransformObject(napi_env env, napi_callback_info info) {
   return TransformRecursive(env, args[0]);
 }
 
+napi_value GraphLayout(napi_env env, napi_callback_info info);
+
 static napi_value Init(napi_env env, napi_value exports) {
   napi_status status;
   napi_property_descriptor desc[] = {
     {"hello", 0, Method, 0,0,0, napi_default, 0},
     {"logObject", 0, LogObject, 0,0,0, napi_default, 0},
-    {"transformObject", 0, TransformObject, 0,0,0, napi_default, 0}
+    {"transformObject", 0, TransformObject, 0,0,0, napi_default, 0},
+    {"graphLayout", 0, GraphLayout, 0,0,0, napi_default, 0}
   };
-  status = napi_define_properties(env, exports, 3, desc);
+  status = napi_define_properties(env, exports, std::size(desc), desc);
   if (!napiCheck(env, status)) return nullptr;
   return exports;
 }
